@@ -14,6 +14,7 @@
 
 import { useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
+import { useCart } from "../context/useCart.js";
 
 function ProductDetail() {
     const BASE_URL = import.meta.env.VITE_DJANGO_BASE_URL || 'http://localhost:8000';
@@ -21,6 +22,7 @@ function ProductDetail() {
     const [product, setProduct] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const { addToCart } = useCart();
 
     useEffect(() => {
         fetch(`${BASE_URL}/api/products/${id}/`)
@@ -64,7 +66,9 @@ function ProductDetail() {
                         <h1 className="text-3xl font-bold text-gray-900 mb-4">{product.name}</h1>
                         <p className="text-2xl font-bold text-emerald-700 mb-4">${Number(product.price).toFixed(2)}</p>
                         <p className="text-gray-600 mb-6">{product.description}</p>
-                        <button className="bg-emerald-700 text-white px-6 py-3 rounded-lg hover:bg-emerald-800 transition-colors">Add to Cart</button>
+                        <button  className="bg-emerald-700 text-white px-6 py-3 rounded-lg hover:bg-emerald-800 transition-colors" onClick={() => addToCart(product)}>
+                            Add to Cart
+                        </button>
                     </div>
                 </div>
                 <button className="mt-6 bg-gray-300 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-400 transition-colors" onClick={() => window.history.back()}>
