@@ -1,7 +1,13 @@
+from django.middleware.csrf import get_token
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from .models import Product, Category, Cart, CartItem
 from .serializers import ProductSerializer, CategorySerializer, CartSerializer, CartItemSerializer
+
+
+@api_view(['GET'])
+def get_csrf_token(request):
+    return Response({"csrfToken": get_token(request)})
 
 
 def _get_cart(request):
@@ -48,10 +54,16 @@ def get_cart(request):
 @api_view(['POST'])
 def add_to_cart(request):
     product_id = request.data.get('product_id')
-    product = Product.objects.get(id=product_id)        
+    if not product_id:
+        return Response({"error": "Product ID is required"}, status=400)
+    try:
+        product = Product.objects.get(id=product_id)
+    except (Product.DoesNotExist, ValueError, TypeError):
+        return Response({"error": "Product not found"}, status=404)
+
     cart = _get_cart(request)
     item, created = CartItem.objects.get_or_create(cart=cart, product=product)
-    
+
     if not created:
         item.quantity += 1
         item.save()
@@ -59,27 +71,37 @@ def add_to_cart(request):
 
 @api_view(['POST'])
 def remove_from_cart(request):
-    item_id=request.data.get('item_id')
+    item_id = request.data.get('item_id')
+    if not item_id:
+        return Response({"error": "Item ID is required"}, status=400)
+
     cart = _get_cart(request)
-    CartItem.objects.filter(id=item_id, cart=cart).delete()
-    return Response({"message": "Item removed from cart"})
+    deleted, _ = CartItem.objects.filter(id=item_id, cart=cart).delete()
+    if not deleted:
+        return Response({"error": "Cart item not found"}, status=404)
+    return Response({"message": "Item removed from cart", "cart": CartSerializer(cart).data})
 
 @api_view(['POST'])
 def update_cart_item_quantity(request):
     item_id = request.data.get('item_id')
     quantity = request.data.get('quantity')
     cart = _get_cart(request)
-    
-    if not item_id or not quantity:
+
+    if item_id is None or quantity is None:
         return Response({"error": "Item ID and quantity are required"}, status=400)
+
     try:
-        item = CartItem.objects.get(id=item_id)
-        if int(quantity)<1:
-            item.delete()
-            return Response({'error': 'Qunatity must be at least 1. Item removed from cart.'}, status=400)
-        item.quantity = quantity
-        item.save()
-        serializer = CartSerializer(cart)
-        return Response(serializer.data)
-    except CartItem.DoesNotExist:
+        quantity = int(quantity)
+    except (ValueError, TypeError):
+        return Response({"error": "Quantity must be a positive integer"}, status=400)
+    if quantity < 1:
+        return Response({"error": "Quantity must be at least 1"}, status=400)
+
+    try:
+        item = CartItem.objects.get(id=item_id, cart=cart)
+    except (CartItem.DoesNotExist, ValueError, TypeError):
         return Response({"error": "Cart item not found"}, status=404)
+
+    item.quantity = quantity
+    item.save(update_fields=["quantity"])
+    return Response(CartSerializer(cart).data)

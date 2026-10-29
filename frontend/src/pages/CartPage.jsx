@@ -2,9 +2,9 @@ import { Link } from "react-router-dom";
 import { useCart } from "../context/useCart.js";
 
 function CartPage() {
-    const { cartItems, removeFromCart, updateQuantity } = useCart();
-    const baseUrl = import.meta.env.VITE_DJANGO_BASE_URL || "http://localhost:8000";
-    const total = cartItems.reduce((sum, item) => sum + Number(item.price) * item.quantity, 0);
+    const { cartItems, total: cartTotal, loading, error, removeFromCart, updateQuantity } = useCart();
+    const baseUrl = import.meta.env.VITE_DJANGO_BASE_URL || `http://${window.location.hostname}:8000`;
+    const total = Number(cartTotal) || 0;
     const itemCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
 
     return (
@@ -20,7 +20,15 @@ function CartPage() {
                     </Link>
                 </div>
 
-                {cartItems.length === 0 ? (
+                {error && (
+                    <p role="alert" className="mb-6 border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+                        {error} Check that the shop server is running and try refreshing the page.
+                    </p>
+                )}
+
+                {loading ? (
+                    <p role="status" className="py-16 text-center text-sm text-stone-600">Loading your cart...</p>
+                ) : cartItems.length === 0 ? (
                     <section className="py-16 text-center">
                         <div className="mx-auto mb-5 flex size-16 items-center justify-center rounded-full bg-emerald-100 text-emerald-900">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="size-8" aria-hidden="true">

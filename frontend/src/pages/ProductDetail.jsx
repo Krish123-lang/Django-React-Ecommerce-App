@@ -17,7 +17,7 @@ import { useEffect, useState } from "react";
 import { useCart } from "../context/useCart.js";
 
 function ProductDetail() {
-    const BASE_URL = import.meta.env.VITE_DJANGO_BASE_URL || 'http://localhost:8000';
+    const BASE_URL = import.meta.env.VITE_DJANGO_BASE_URL || '';
     const { id } = useParams();
     const [product, setProduct] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -51,7 +51,8 @@ function ProductDetail() {
     if (!product) {
         return <main className="min-h-screen bg-gray-50 px-5 py-12 text-center text-gray-600">Product not found.</main>;
     }
-    const imageUrl = product.image ? new URL(product.image, `${BASE_URL}/`).toString() : null;
+    const mediaBaseUrl = import.meta.env.VITE_DJANGO_BASE_URL || `http://${window.location.hostname}:8000`;
+    const imageUrl = product.image ? new URL(product.image, `${mediaBaseUrl}/`).toString() : null;
 
     return (
         <div className="min-h-screen bg-gray-100 flex justify-center items-center py-10">
