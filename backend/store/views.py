@@ -1,7 +1,19 @@
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
-from .models import Product, Category
-from .serializers import ProductSerializer, CategorySerializer
+from .models import Product, Category, Cart, CartItem
+from .serializers import ProductSerializer, CategorySerializer, CartSerializer, CartItemSerializer
+
+
+def _get_cart(request):
+    if request.user.is_authenticated:
+        return Cart.objects.get_or_create(user=request.user)[0]
+
+    if request.session.session_key is None:
+        request.session.create()
+    return Cart.objects.get_or_create(
+        session_key=request.session.session_key,
+        defaults={"user": None},
+    )[0]
 
 
 @api_view(['GET'])
@@ -26,3 +38,28 @@ def get_product_detail(request, pk):
         return Response(serializer.data)
     except Product.DoesNotExist:
         return Response({"error": "Product not found"}, status=404)
+
+@api_view(['GET'])
+def get_cart(request):
+    cart = _get_cart(request)
+    serializer = CartSerializer(cart)
+    return Response(serializer.data)
+
+@api_view(['POST'])
+def add_to_cart(request):
+    product_id = request.data.get('product_id')
+    product = Product.objects.get(id=product_id)        
+    cart = _get_cart(request)
+    item, created = CartItem.objects.get_or_create(cart=cart, product=product)
+    
+    if not created:
+        item.quantity += 1
+        item.save()
+    return Response({"message": "Product added to cart", "cart": CartSerializer(cart).data})
+
+@api_view(['POST'])
+def remove_from_cart(request):
+    item_id=request.data.get('item_id')
+    cart = _get_cart(request)
+    CartItem.objects.filter(id=item_id, cart=cart).delete()
+    return Response({"message": "Item removed from cart"})
