@@ -67,12 +67,12 @@ function ProductDetail() {
                         <h1 className="text-3xl font-bold text-gray-900 mb-4">{product.name}</h1>
                         <p className="text-2xl font-bold text-emerald-700 mb-4">${Number(product.price).toFixed(2)}</p>
                         <p className="text-gray-600 mb-6">{product.description}</p>
-                        <button  className="bg-emerald-700 text-white px-6 py-3 rounded-lg hover:bg-emerald-800 transition-colors" onClick={() => addToCart(product)}>
+                        <button  className="cursor-pointer bg-emerald-700 text-white px-6 py-3 rounded-lg hover:bg-emerald-800 transition-colors" onClick={() => addToCart(product)}>
                             Add to Cart
                         </button>
                     </div>
                 </div>
-                <button className="mt-6 bg-gray-300 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-400 transition-colors" onClick={() => window.history.back()}>
+                <button className="cursor-pointer mt-6 bg-gray-300 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-400 transition-colors" onClick={() => window.history.back()}>
                     Back to Products
                 </button>
             </div>

@@ -1,7 +1,7 @@
 from django.middleware.csrf import get_token
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
-from .models import Product, Category, Cart, CartItem
+from .models import Product, Category, Cart, CartItem, Order, OrderItem
 from .serializers import ProductSerializer, CategorySerializer, CartSerializer, CartItemSerializer
 
 
@@ -105,3 +105,40 @@ def update_cart_item_quantity(request):
     item.quantity = quantity
     item.save(update_fields=["quantity"])
     return Response(CartSerializer(cart).data)
+
+@api_view(['POST'])
+def create_order(request):
+    try:
+        data = request.data
+        name = data.get('name')
+        address = data.get('address')
+        phone = data.get('phone')
+        payment_method = data.get('payment_method')
+        cart = Cart.objects.first()
+
+        if not cart or not cart.items.exists():
+            return Response({'error': 'Cart is empty'}, status=400)
+        total = sum(float(item.product.price) *
+                    item.quantity for item in cart.items.all())
+
+        # create order
+        order = Order.objects.create(
+            user=request.user if request.user.is_authenticated else None,
+            total_amount=total,
+        )
+
+        # Create order items
+        for item in cart.items.all():
+            OrderItem.objects.create(
+                order=order,
+                product=item.product,
+                quantity=item.quantity,
+                price=item.product.price
+            )
+
+        # Clear the cart
+        cart.items.all().delete()
+        return Response({'message': 'Order created successfully', 'order_id': order.id}, status=201)
+
+    except Exception as e:
+        return Response({'error': str(e)}, status=500)
