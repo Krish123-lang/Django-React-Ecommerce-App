@@ -99,6 +99,9 @@ function CartPage() {
                                 <span>Subtotal</span>
                                 <span className="tabular-nums">${total.toFixed(2)}</span>
                             </div>
+                            <Link to="/checkout" className="block w-full rounded bg-emerald-900 px-6 py-3 text-center text-sm font-semibold text-white transition hover:bg-emerald-800">
+                                Proceed to checkout
+                            </Link>
                             <p className="text-xs leading-5 text-stone-500">Shipping and taxes are confirmed when checkout is available.</p>
                         </aside>
                     </div>

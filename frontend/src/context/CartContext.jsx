@@ -123,8 +123,13 @@ export const CartProvider = ({ children }) => {
         }
     };
 
+    const clearCart = () => {
+        setCartItems([]);
+        setTotal(0);
+    }
+
     return (
-        <CartContext.Provider value={{ cartItems, total, loading, error, addToCart, removeFromCart, updateQuantity, refreshCart: fetchCartFromBackend }}>
+        <CartContext.Provider value={{ cartItems, total, loading, error, clearCart, addToCart, removeFromCart, updateQuantity, refreshCart: fetchCartFromBackend }}>
             {children}
         </CartContext.Provider>
     );

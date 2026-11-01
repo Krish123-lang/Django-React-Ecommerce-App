@@ -1,7 +1,7 @@
 from django.test import TestCase
 from django.contrib.auth.models import User
 from rest_framework.test import APIClient
-from .models import Cart, CartItem, Category, Product
+from .models import Cart, CartItem, Category, Order, OrderItem, Product
 
 
 class GuestCartTests(TestCase):
@@ -122,3 +122,70 @@ class GuestCartTests(TestCase):
 			format="json",
 		)
 		self.assertEqual(response.status_code, 404)
+
+	def test_order_uses_and_clears_only_the_current_session_cart(self):
+		first_client = APIClient()
+		first_cart_response = first_client.post(
+			"/api/cart/add/",
+			{"product_id": self.product.id},
+			format="json",
+		)
+		first_cart_id = first_cart_response.data["cart"]["id"]
+
+		second_client = APIClient()
+		second_cart_response = second_client.post(
+			"/api/cart/add/",
+			{"product_id": self.product.id},
+			format="json",
+		)
+		second_cart_id = second_cart_response.data["cart"]["id"]
+
+		response = second_client.post(
+			"/api/orders/create/",
+			{
+				"name": "Test Customer",
+				"address": "123 Test Street",
+				"phone": "555-0100",
+				"payment_method": "COD",
+			},
+			format="json",
+		)
+
+		self.assertEqual(response.status_code, 201)
+		self.assertEqual(Order.objects.count(), 1)
+		self.assertEqual(OrderItem.objects.get().order_id, response.data["order_id"])
+		self.assertEqual(CartItem.objects.filter(cart_id=first_cart_id).count(), 1)
+		self.assertEqual(CartItem.objects.filter(cart_id=second_cart_id).count(), 0)
+
+	def test_authenticated_order_requires_and_accepts_csrf_token(self):
+		user = User.objects.create_user(username="checkout-user", password="password")
+		client = APIClient(enforce_csrf_checks=True)
+		client.force_login(user)
+		cart = Cart.objects.create(user=user)
+		CartItem.objects.create(cart=cart, product=self.product)
+
+		csrf_response = client.get("/api/csrf/")
+		csrf_token = csrf_response.data["csrfToken"]
+		payload = {
+			"name": "Test Customer",
+			"address": "123 Test Street",
+			"phone": "555-0100",
+			"payment_method": "COD",
+		}
+
+		missing_token_response = client.post(
+			"/api/orders/create/",
+			payload,
+			format="json",
+			HTTP_ORIGIN="http://localhost:5173",
+		)
+		self.assertEqual(missing_token_response.status_code, 403)
+
+		valid_response = client.post(
+			"/api/orders/create/",
+			payload,
+			format="json",
+			HTTP_ORIGIN="http://localhost:5173",
+			HTTP_X_CSRFTOKEN=csrf_token,
+		)
+		self.assertEqual(valid_response.status_code, 201)

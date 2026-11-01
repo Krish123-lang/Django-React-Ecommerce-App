@@ -114,7 +114,7 @@ def create_order(request):
         address = data.get('address')
         phone = data.get('phone')
         payment_method = data.get('payment_method')
-        cart = Cart.objects.first()
+        cart = _get_cart(request)
 
         if not cart or not cart.items.exists():
             return Response({'error': 'Cart is empty'}, status=400)
