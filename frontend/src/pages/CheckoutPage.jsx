@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useCart } from "../context/useCart.js";
+import {authFetch} from '../utils/auth.js';
 
 function CheckoutPage() {
     const Base_URL = import.meta.env.VITE_DJANGO_BASE_URL || '';
@@ -29,7 +30,7 @@ function CheckoutPage() {
         setLoading(true);
         setMessage("");
         try {
-            const csrfResponse = await fetch(`${Base_URL}/api/csrf/`, {
+            const csrfResponse = await authFetch(`${Base_URL}/api/csrf/`, {
                 credentials: "include",
             });
             const csrfData = await csrfResponse.json();
@@ -37,7 +38,7 @@ function CheckoutPage() {
                 throw new Error("Could not initialize a secure order request. Refresh the page and try again.");
             }
 
-            const response = await fetch(`${Base_URL}/api/orders/create/`, {
+            const response = await authFetch(`${Base_URL}/api/orders/create/`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { CartContext } from './cartContext.js';
+import {authFetch, getAccessToken} from '../utils/auth';
 
 export const CartProvider = ({ children }) => {
     const BASE_URL = import.meta.env.VITE_DJANGO_BASE_URL || '';
@@ -26,7 +27,7 @@ export const CartProvider = ({ children }) => {
         const method = (options.method || 'GET').toUpperCase();
         let csrfToken;
         if (!['GET', 'HEAD', 'OPTIONS', 'TRACE'].includes(method)) {
-            const csrfResponse = await fetch(`${BASE_URL}/api/csrf/`, {
+            const csrfResponse = await authFetch(`${BASE_URL}/api/csrf/`, {
                 credentials: 'include',
             });
             const csrfData = await csrfResponse.json();
@@ -36,7 +37,7 @@ export const CartProvider = ({ children }) => {
             csrfToken = csrfData.csrfToken;
         }
 
-        const response = await fetch(`${BASE_URL}${path}`, {
+        const response = await authFetch(`${BASE_URL}${path}`, {
             credentials: 'include',
             ...options,
             headers: {

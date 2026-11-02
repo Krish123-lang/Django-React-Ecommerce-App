@@ -22,6 +22,8 @@ function ProductDetail() {
     const [product, setProduct] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [addingToCart, setAddingToCart] = useState(false);
+    const [cartMessage, setCartMessage] = useState('');
     const { addToCart } = useCart();
 
     useEffect(() => {
@@ -53,6 +55,17 @@ function ProductDetail() {
     }
     const mediaBaseUrl = import.meta.env.VITE_DJANGO_BASE_URL || `http://${window.location.hostname}:8000`;
     const imageUrl = product.image ? new URL(product.image, `${mediaBaseUrl}/`).toString() : null;
+    const handleAddToCart = async () => {
+        if(!localStorage.getItem('access_token')) {
+            window.location.href = '/login';
+            return;
+        }
+        setAddingToCart(true);
+        setCartMessage('');
+        const added = await addToCart(product);
+        setCartMessage(added ? 'Added to your cart.' : 'Could not add this product. Please try again.');
+        setAddingToCart(false);
+    }
 
     return (
         <div className="min-h-screen bg-gray-100 flex justify-center items-center py-10">
@@ -67,9 +80,10 @@ function ProductDetail() {
                         <h1 className="text-3xl font-bold text-gray-900 mb-4">{product.name}</h1>
                         <p className="text-2xl font-bold text-emerald-700 mb-4">${Number(product.price).toFixed(2)}</p>
                         <p className="text-gray-600 mb-6">{product.description}</p>
-                        <button  className="cursor-pointer bg-emerald-700 text-white px-6 py-3 rounded-lg hover:bg-emerald-800 transition-colors" onClick={() => addToCart(product)}>
-                            Add to Cart
+                        <button type="button" disabled={addingToCart} className="min-h-12 cursor-pointer bg-emerald-900 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-emerald-800 disabled:cursor-wait disabled:bg-stone-500" onClick={handleAddToCart}>
+                            {addingToCart ? 'Adding...' : 'Add to Cart'}
                         </button>
+                        {cartMessage && <p role="status" className={`mt-4 text-sm ${cartMessage.startsWith('Could not') ? 'text-red-700' : 'text-emerald-800'}`}>{cartMessage}</p>}
                     </div>
                 </div>
                 <button className="cursor-pointer mt-6 bg-gray-300 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-400 transition-colors" onClick={() => window.history.back()}>

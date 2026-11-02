@@ -1,9 +1,16 @@
-import { Link, NavLink } from "react-router-dom";
+import { Link, NavLink, useNavigate } from "react-router-dom";
 import { useCart } from "../context/useCart.js";
+import {clearTokens, getAccessToken} from '../utils/auth.js';
 
 function Navbar() {
     const { cartItems } = useCart();
+    const navigate = useNavigate();
     const cartCount = cartItems.reduce((total, item) => total + item.quantity, 0);
+    const isLoggedIn = !!getAccessToken();
+    const handleLogout = () => {
+        clearTokens();
+        navigate("/login");
+    }
 
     return (
         <header className="sticky top-0 z-50 border-b border-stone-200 bg-white/95 shadow-sm backdrop-blur">
@@ -14,6 +21,29 @@ function Navbar() {
                         My<span className="text-emerald-800">Store</span>
                     </span>
                 </Link>
+
+                <div className="">
+                    {isLoggedIn ? (
+                        <button onClick={handleLogout} className="px-2 py-2 text-sm font-semibold text-stone-600 transition-colors hover:text-emerald-900 sm:px-4">
+                            Logout
+                        </button>
+                    ) : (
+                        <>
+                            <NavLink
+                                to="/login"
+                                className={({ isActive }) => `px-2 py-2 text-sm font-semibold transition-colors sm:px-4 ${isActive ? "text-emerald-900 underline decoration-2 underline-offset-8" : "text-stone-600 hover:text-emerald-900"}`}
+                            >
+                                Login
+                            </NavLink>
+                            <NavLink
+                                to="/signup"
+                                className={({ isActive }) => `px-2 py-2 text-sm font-semibold transition-colors sm:px-4 ${isActive ? "text-emerald-900 underline decoration-2 underline-offset-8" : "text-stone-600 hover:text-emerald-900"}`}
+                            >
+                                Signup
+                            </NavLink>
+                        </>
+                    )}
+                </div>
 
                 <div className="flex items-center gap-1 sm:gap-4">
                     <NavLink
